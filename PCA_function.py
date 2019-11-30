@@ -57,11 +57,11 @@ def pca(data, top_num_features=20):
     return eigenvalues, selected_eig_vects, mean_vals
 
 
-data = load_data(0, 5000)
+data = load_data(1, 5000)
 eig_values, top_num_eig_vects, mean_image = pca(data)
 example.display(mean_image)
 show_image(top_num_eig_vects)
-# eig_val_index = np.argsort(eig_values)
-# top_100_eig_index = eig_val_index[:-(100 + 1): -1]
-# plt.plot(np.arange(100), eig_values[top_100_eig_index])
-# plt.show()
+eig_val_index = np.argsort(eig_values)
+top_100_eig_index = eig_val_index[:-(100 + 1): -1]
+plt.plot(np.arange(100), eig_values[top_100_eig_index])
+plt.show()
