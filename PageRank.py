@@ -1,8 +1,9 @@
 import numpy as np
+import sys
 
 
-def readFile(filename = 'web-Google.txt'):
-    vtx_map = dict()
+def readFile(vtx_map, filename = 'web-Google.txt'):
+
     edge_list = []
     f = open(filename)
     lines = f.readlines()[4:]
@@ -74,17 +75,33 @@ def updatePageRank(beta, M, rank):
     num_verties = np.shape(M)[0]
     iter = 1
     while np.sum(abs(rank - (beta*np.matmul(M,rank) + (1-beta)*1/num_verties))) > 0.0001:
-        print(iter)
+        print('iteration:%d'%iter)
         rank = beta * np.matmul(M, rank) + (1 - beta) * 1/num_verties
         iter += 1
     return rank
 
+
+def reverse_map(rank, vtx_map):
+    result_node = []
+    for index in rank:
+        if index in vtx_map.values():
+            result_node.append(list(vtx_map.keys())[list(vtx_map.values()).index(index)])
+    return result_node
+
 if __name__ == '__main__':
-    vtx_list, edge_list = readFile()
+    vtx_map = dict()
+    file = 'web-Google.txt'
+    try:
+        vtx_list, edge_list = readFile(vtx_map, file)
+    except FileNotFoundError:
+        print("File %s not found!!!"%file)
+        sys.exit(1)
     print(vtx_list)
     print(edge_list)
     M, init_rank = initiation(vtx_list, edge_list)
-    # print(M)
-    # print(init_rank)
     rank = updatePageRank(0.90, M, init_rank)
     print(rank)
+    rank = np.squeeze(np.array(rank), axis=1)
+    rank = np.argsort(-rank)
+    rank = reverse_map(rank, vtx_map)
+    print(rank[:10])
