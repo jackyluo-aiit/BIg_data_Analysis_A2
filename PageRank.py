@@ -145,4 +145,4 @@ if __name__ == '__main__':
     rank = np.argsort(-rank)
     rank = reverse_map(rank, vtx_map)
     print(rank[:100])
-    np.savetxt('result.txt', np.array(rank), fmt="%s")
+    np.savetxt('result.txt', np.array(rank[:100]), fmt="%s")
