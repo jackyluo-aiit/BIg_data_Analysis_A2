@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+from scipy import sparse
 
 
 def readFile(vtx_map, filename='web-Google.txt'):
@@ -51,26 +52,49 @@ class Edge:
 def initiation(vertices, edges):
     num_vertex = len(vertices)
     num_edges = len(edges)
-    M = np.zeros((num_vertex, num_vertex))
+
+    #sparse implementation
+    vtx_list = [Vertex() for _ in range(num_vertex)]
+    row = list()
+    col = list()
+    data = list()
+    # M = np.zeros((num_vertex, num_vertex))
     for edge in edges:
-        M[int(edge.end)][int(edge.start)] = 1
-    b = np.transpose(M)
-    result_M = np.zeros((M.shape), dtype=float)
-    # for j in range(np.shape(b)[1]):
-    #     print(b[j].sum())
-    for i in range(np.shape(M)[0]):
-        for j in range(np.shape(M)[1]):
-            if b[j].sum() != 0:
-                result_M[i][j] = M[i][j] / (b[j].sum())
-    init_rank = np.zeros((np.shape(M)[0], 1), dtype=float)
+        # M[int(edge.end)][int(edge.start)] = 1
+        row.append(int(edge.end))
+        col.append(int(edge.start))
+        vtx_list[edge.start].out_node += 1
+        vtx_list[edge.end].in_node += 1
+    for edge in edges:
+        data.append(1/vtx_list[edge.start].out_node)
+    result_M = sparse.coo_matrix((data, (row, col)), shape=(num_vertex, num_vertex))
+    print('Trans_matrix completed!!!')
+
+    # dense implementation
+    # b = np.transpose(M)
+    # result_M = np.zeros((M.shape), dtype=float)
+    # # for j in range(np.shape(b)[1]):
+    # #     print(b[j].sum())
+    # for i in range(np.shape(M)[0]):
+    #     for j in range(np.shape(M)[1]):
+    #         if b[j].sum() != 0:
+    #             result_M[i][j] = M[i][j] / (b[j].sum())
+
+    init_rank = np.zeros((np.shape(result_M)[0], 1), dtype=float)
     for i in range(np.shape(init_rank)[0]):
         init_rank[i] = 1.0 / num_vertex
+    print('Intial rank completed!!!')
     return result_M, init_rank
 
 
 def updatePageRank(beta, M, rank):
-    M = np.mat(M)
+    # dense implementation
+    # # M = np.mat(M)
     rank = np.mat(rank)
+
+    # sparse implementation
+    M = M.todense()
+    # rank = sparse.csr_matrix(rank)
     num_verties = np.shape(M)[0]
     iter = 1
     while np.sum(abs(rank - (beta * np.matmul(M, rank) + (1 - beta) * 1 / num_verties))) > 0.0001:
@@ -88,7 +112,20 @@ def reverse_map(rank, vtx_map):
     return result_node
 
 
+def evluation(file1, file2):
+    list1 = list(np.loadtxt(file1))
+    list2 = list(np.loadtxt(file2))
+    count = 0
+    assert len(list1) == len(list2), 'Two lists are in different length!!!'
+    for each in range(len(list1)):
+        if list2[each] != list1[each]:
+            count += 1
+    return count/len(list1)
+
+
 if __name__ == '__main__':
+    # print(evluation('result_test2_new.txt', 'result_test2_old.txt'))
+    # sys.exit(0)
     vtx_map = dict()
     file = 'web-Google.txt'
     try:
@@ -96,14 +133,16 @@ if __name__ == '__main__':
     except FileNotFoundError:
         print("File %s not found!!!" % file)
         sys.exit(1)
-    # print(vtx_list)
-    # print(edge_list)
-    print('Read filw completed!!!')
+    print('Read file completed!!!')
     M, init_rank = initiation(vtx_list, edge_list)
     print('Initiation completed!!!')
+    # print(M.toarray())
+    # print(init_rank)
     rank = updatePageRank(0.90, M, init_rank)
-    print(rank)
+    print('Updated rank!!!')
+    # print(rank)
     rank = np.squeeze(np.array(rank), axis=1)
     rank = np.argsort(-rank)
     rank = reverse_map(rank, vtx_map)
     print(rank[:100])
+    np.savetxt('result.txt', np.array(rank), fmt="%s")
